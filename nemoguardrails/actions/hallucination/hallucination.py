@@ -19,6 +19,8 @@ from typing import Optional
 from langchain import LLMChain, PromptTemplate
 from langchain.llms import OpenAI
 from langchain.llms.base import BaseLLM
+from langchain.llms import Bedrock
+from langchain.chat_models import BedrockChat
 
 from nemoguardrails.actions.llm.utils import (
     get_multiline_response,
@@ -66,7 +68,16 @@ async def check_hallucination(
         chain = LLMChain(prompt=last_bot_prompt, llm=llm)
 
         # Generate multiple responses with temperature 1.
-        with llm_params(llm, temperature=1.0, n=num_responses, best_of=num_responses):
+        # Check if the instance is Bedrock or BedrockChat
+        if isinstance(llm, (Bedrock, BedrockChat)):
+            # Use model_kwargs for Bedrock instances
+            context_manager = llm_params(llm, model_kwargs={'temperature': 1.0}, n=num_responses, best_of=num_responses)
+        else:
+            # Use regular kwargs for other instances
+            context_manager = llm_params(llm, temperature=1.0, n=num_responses, best_of=num_responses)
+
+        # Now we can call the async function outside and only once
+        with context_manager:
             extra_llm_response = await chain.agenerate(
                 [{"text": last_bot_prompt_string}],
                 run_manager=logging_callback_manager_for_chain,
