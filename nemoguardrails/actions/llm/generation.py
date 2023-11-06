@@ -28,6 +28,8 @@ from typing import Callable, List, Optional
 
 from jinja2 import Environment, meta
 from langchain.llms import BaseLLM
+from langchain.llms import Bedrock
+from langchain.chat_models import BedrockChat
 
 from nemoguardrails.actions.actions import ActionResult, action
 from nemoguardrails.actions.llm.utils import (
@@ -264,8 +266,12 @@ class LLMGenerationActions:
             )
 
             # We make this call with temperature 0 to have it as deterministic as possible.
-            with llm_params(llm, temperature=self.config.lowest_temperature):
-                result = await llm_call(llm, prompt)
+            if isinstance(llm, Bedrock) or isinstance(llm, BedrockChat):
+                with llm_params(llm, model_kwargs={'temperature': self.config.lowest_temperature}):
+                    result = await llm_call(llm, prompt)
+            else:
+                with llm_params(llm, temperature=self.config.lowest_temperature):
+                    result = await llm_call(llm, prompt)
 
             # Parse the output using the associated parser
             result = self.llm_task_manager.parse_task_output(
@@ -342,8 +348,12 @@ class LLMGenerationActions:
             )
 
             # We use temperature 0 for next step prediction as well
-            with llm_params(llm, temperature=self.config.lowest_temperature):
-                result = await llm_call(llm, prompt)
+            if isinstance(llm, Bedrock) or isinstance(llm, BedrockChat):
+                with llm_params(llm, model_kwargs={'temperature': self.config.lowest_temperature}):
+                    result = await llm_call(llm, prompt)
+            else:
+                with llm_params(llm, temperature=self.config.lowest_temperature):
+                    result = await llm_call(llm, prompt)
 
             # Parse the output using the associated parser
             result = self.llm_task_manager.parse_task_output(
@@ -591,8 +601,12 @@ class LLMGenerationActions:
             },
         )
 
-        with llm_params(llm, temperature=self.config.lowest_temperature):
-            result = await llm_call(llm, prompt)
+        if isinstance(llm, Bedrock) or isinstance(llm, BedrockChat):
+            with llm_params(llm, model_kwargs={'temperature': self.config.lowest_temperature}):
+                result = await llm_call(llm, prompt)
+        else:
+          with llm_params(llm, temperature=self.config.lowest_temperature):
+               result = await llm_call(llm, prompt)
 
         # Parse the output using the associated parser
         result = self.llm_task_manager.parse_task_output(
