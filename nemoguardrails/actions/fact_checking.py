@@ -56,8 +56,7 @@ async def check_facts(
 
         # Now we can call the async function outside and only once
         with context_manager:
-            check = await llm_call(llm, prompt)
-
+            entails = await llm_call(llm, prompt)
 
         entails = entails.lower().strip()
         log.info(f"Entailment result is {entails}.")
