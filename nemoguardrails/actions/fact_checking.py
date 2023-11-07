@@ -17,6 +17,8 @@ import logging
 from typing import Optional
 
 from langchain.llms.base import BaseLLM
+from langchain.llms import Bedrock
+from langchain.chat_models import BedrockChat
 
 from nemoguardrails.actions.llm.utils import llm_call
 from nemoguardrails.llm.params import llm_params
@@ -45,8 +47,17 @@ async def check_facts(
             },
         )
 
-        with llm_params(llm, temperature=0.0):
-            entails = await llm_call(llm, prompt)
+        if isinstance(llm, (Bedrock, BedrockChat)):
+            # Use model_kwargs for Bedrock instances
+            context_manager = llm_params(llm, model_kwargs={'temperature': 0.0})
+        else:
+            # Use regular kwargs for other instances
+            context_manager = llm_params(llm, temperature=0.0)
+
+        # Now we can call the async function outside and only once
+        with context_manager:
+            check = await llm_call(llm, prompt)
+
 
         entails = entails.lower().strip()
         log.info(f"Entailment result is {entails}.")
